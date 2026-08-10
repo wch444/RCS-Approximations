@@ -1,0 +1,27 @@
+# External data, fitted parameters, and generated experiment outputs
+data/
+data.nosync/
+opt_data/
+experiments/*/results/
+experiments/mixed_order_expedia/.mixed-order-analysis.lock
+logs/
+
+# Generated numerical files
+*.mat
+*.csv
+*.tsv
+*.parquet
+*.h5
+*.hdf5
+*.log
+nohup.out*
+
+# Python, editors, and operating-system metadata
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.claude/
+.DS_Store

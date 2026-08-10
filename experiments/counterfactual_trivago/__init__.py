@@ -1,0 +1,1 @@
+"""Trivago revenue counterfactual experiment."""

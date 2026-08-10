@@ -1,0 +1,7 @@
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+extend-exclude = '''
+^/experiments/predictive_trivago/python/preprocess/pipeline\.py$
+|^/experiments/predictive_trivago/python/preprocess/
+'''
