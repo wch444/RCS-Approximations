@@ -1,8 +1,9 @@
 # Sequential Choice Model computational code
 
 This code reproduces the Expedia, Trivago, and synthetic experiments used in
-the SCM comparison study. Raw data, processed matrices, fitted parameters, and
-generated results are not bundled.
+the SCM comparison study. It includes the complete 5-by-10 fitted grids for
+Expedia and Trivago and the published synthetic result bundle. Raw data,
+processed matrices, and generated empirical results are not bundled.
 
 ## Requirements
 
@@ -18,8 +19,10 @@ conda activate scm-repro-2026
 python reproduce.py --help
 ```
 
-All commands below must also be run from the repository root. Generated data,
-fits, and results are written only to paths ignored by Git.
+All commands below must also be run from the repository root. Generated raw
+and processed data and empirical result bundles are written only to paths
+ignored by Git. The fitted grids and synthetic outputs described below are
+versioned files.
 
 ## Expedia: exact run order
 
@@ -35,8 +38,6 @@ python reproduce.py build-expedia-h5 \
 
 python reproduce.py preprocess-expedia \
   --h5 data/raw/expedia/preprocess_data_com.h5
-
-python reproduce.py fit-expedia --dataset expedia
 
 python reproduce.py expedia-local-predictive
 
@@ -58,11 +59,10 @@ test queries. The historical split-specific standardization is intentionally
 preserved: train and test use their own sample means and sample standard
 deviations (`ddof=1`).
 
-`fit-expedia` freshly estimates SCM, MNL, MMNL, CMNL, SeqINV, and NSMNL for all
-five sites and ten trials. The resulting unified files are written to
-`opt_data/expedia/`. For deterministic parallel sharding, launch distinct
-`--shard-index` values with one common `--shard-count`; add `--resume` when
-restarting an interrupted grid.
+The repository already contains the 50 unified Expedia fits used by the paper
+under `opt_data/expedia/`. They cover SCM, MNL, MMNL, CMNL, SeqINV, and NSMNL
+for all five sites and ten trials. The commands above therefore reproduce the
+evaluation without repeating the long fitting stage.
 
 ## Trivago: exact run order
 
@@ -80,8 +80,6 @@ Then run:
 ```bash
 python reproduce.py preprocess --dataset trivago
 
-python reproduce.py fit --dataset trivago
-
 python reproduce.py evaluate --dataset trivago
 
 python reproduce.py tables --dataset trivago
@@ -89,7 +87,23 @@ python reproduce.py tables --dataset trivago
 python reproduce.py counterfactuals --dataset trivago
 ```
 
-The unified six-model fit grid is written to `opt_data/trivago/`.
+The 50 unified Trivago fits used by the paper are bundled under
+`opt_data/trivago/`, so the default sequence evaluates those retained fits.
+
+## Optional full re-estimation
+
+The two fitting commands remain available:
+
+```bash
+python reproduce.py fit-expedia --dataset expedia
+python reproduce.py fit --dataset trivago
+```
+
+Run a full re-estimation in a disposable clone or worktree after moving the
+corresponding bundled `opt_data/<dataset>/` directory aside. Expedia refuses to
+overwrite an existing task; Trivago replaces its canonical task files.
+Expedia `--resume` is intended only for continuing a newly started incomplete
+fit grid, not for consuming the bundled grid.
 
 ## Synthetic experiment
 
@@ -99,10 +113,14 @@ The synthetic experiment needs no external data:
 python reproduce.py synthetic
 ```
 
-## Generated outputs
+The checked-in outputs are under `experiments/synthetic/results/`: 18,000
+trial rows, their aggregate summary, the paper-value CSV, and the generated
+LaTeX table. Re-running the command should reproduce these files.
+
+## Bundled inputs and generated outputs
 
 - Processed empirical matrices: `data/processed/<dataset>/`
-- Unified six-model fitted parameters: `opt_data/<dataset>/`
+- Bundled unified fitted parameters: `opt_data/<dataset>/`
 - Experiment outputs: `experiments/<experiment>/results/`
 
 Each unified fit contains SCM, MNL, MMNL, CMNL, SeqINV, and NSMNL parameters

@@ -26,7 +26,9 @@ Shared code lives under:
 `addpath(genpath(repo_root))`; each MATLAB entry point adds only its experiment
 directory and the shared directories it needs.
 
-The repository contains code and documentation only. At runtime, generated
-matrices are placed under `data/processed/`, fitted parameters under
-`opt_data/`, and result bundles under the corresponding experiment's
-`results/` directory. These paths are ignored by Git.
+The repository contains code, documentation, the two unified fitted grids
+under `opt_data/`, and the published synthetic result bundle. At runtime,
+generated matrices are placed under `data/processed/`, while empirical result
+bundles are written under the corresponding experiment's `results/`
+directory. Raw/processed data and generated empirical results remain ignored
+by Git.

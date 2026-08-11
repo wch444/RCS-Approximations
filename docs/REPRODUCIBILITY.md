@@ -19,7 +19,6 @@ python reproduce.py build-expedia-h5 \
   --csv data/raw/expedia/train.csv
 python reproduce.py preprocess-expedia \
   --h5 data/raw/expedia/preprocess_data_com.h5
-python reproduce.py fit-expedia --dataset expedia
 python reproduce.py expedia-local-predictive
 python reproduce.py counterfactuals --dataset expedia
 ```
@@ -46,7 +45,6 @@ After downloading the official RecSys Challenge 2019 `train.csv` and
 
 ```bash
 python reproduce.py preprocess --dataset trivago
-python reproduce.py fit --dataset trivago
 python reproduce.py evaluate --dataset trivago
 python reproduce.py tables --dataset trivago
 python reproduce.py counterfactuals --dataset trivago
@@ -77,5 +75,7 @@ and fixed task-keyed seeds rooted at `20260808`.
   unit.
 - The synthetic grid produces 18,000 trial rows before aggregation.
 
-Generated matrices, fit files, CSV files, tables, and figures remain in ignored
-runtime directories and are not part of the source distribution.
+Generated matrices and empirical CSV, table, and figure bundles remain in
+ignored runtime directories. The source distribution includes the two
+50-file fitted grids and the four synthetic result files; raw/processed data
+and generated empirical outputs remain excluded.

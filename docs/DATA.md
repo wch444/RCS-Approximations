@@ -1,7 +1,8 @@
 # Data contract
 
-No raw observations, processed matrices, fitted parameters, or generated
-results are distributed with this code.
+No raw observations or processed matrices are distributed with this code. The
+repository does include the two complete fitted-parameter grids and the
+synthetic reference outputs; these contain no raw query or user identifiers.
 
 ## Expedia
 
@@ -66,7 +67,16 @@ standardization. It writes the five-market by ten-trial grid under
 
 ## Fitted parameters
 
-Both empirical workflows write `fit_<market>_<trial>.mat` files under
+Both complete 5-by-10 fitted grids are distributed under
 `opt_data/<dataset>/`. Expedia uses its numeric site as the market key. Each
-file contains one top-level `fit` structure whose `models` field stores the six
-model specifications.
+`fit_<market>_<trial>.mat` contains one top-level `fit` structure whose
+`models` field stores the six model specifications. The files contain fitted
+parameters, fixed seeds, dimensions, and optimization diagnostics, but no raw
+observations.
+
+## Synthetic reference outputs
+
+`experiments/synthetic/results/` contains the 18,000-row trial file, the
+18-row aggregate summary, the 9-row paper-value file, and the generated LaTeX
+table. Replication numbers and seeds are deterministic reproduction keys, not
+raw identifiers.
