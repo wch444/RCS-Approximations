@@ -5,16 +5,35 @@ results are distributed with this code.
 
 ## Expedia
 
-Obtain the raw source from the
-[Expedia Personalized Sort competition](https://www.kaggle.com/c/expedia-personalized-sort/data).
-The public pipeline starts from a user-supplied pandas fixed-format HDF5 file:
+Obtain `train.csv` from the
+[Expedia Personalized Sort competition](https://www.kaggle.com/c/expedia-personalized-sort/data)
+and place it at:
 
 ```text
-data/raw/expedia/preprocess_data_com.h5
+data/raw/expedia/train.csv
 ```
 
-The default HDF key is `data`. The frame must contain the columns named in
-`experiments/predictive_expedia/python/preprocess/pipeline.py`.
+`python reproduce.py build-expedia-h5 --csv data/raw/expedia/train.csv`
+reconstructs `data/raw/expedia/preprocess_data_com.h5`. It applies the recovered
+historical row filters `10 < price_usd < 5000`, `srch_room_count == 1`, and
+`srch_length_of_stay <= 10`, retains the following columns in order, and then
+drops rows with a missing retained value:
+
+```text
+srch_id, prop_id, site_id, position, date_time, booking_bool, random_bool,
+click_bool, price_usd, prop_starrating, prop_location_score1,
+prop_review_score, srch_length_of_stay, prop_log_historical_price,
+promotion_flag, srch_booking_window, srch_adults_count, prop_brand_bool,
+srch_children_count, srch_saturday_night_bool
+```
+
+Rows are not restricted by `random_bool`; both values remain in the HDF5
+frame, matching the historical build.
+
+The output is a pandas fixed-format HDF5 frame under key `data`. The original
+competition file produces 8,938,178 logical rows in original CSV order, with
+the filtered CSV index retained. Binary HDF5 serialization is library-version
+dependent and is not used as the reproducibility target.
 
 For each site, the pipeline removes every complete query with more than four
 clicks before position-bin construction and query sampling. Trial `i` uses

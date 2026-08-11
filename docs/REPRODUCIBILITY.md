@@ -12,9 +12,11 @@ Computing toolboxes is the tested numerical environment.
 
 ## Expedia
 
-Starting from `data/raw/expedia/preprocess_data_com.h5`, run:
+Starting from the Kaggle `train.csv`, run:
 
 ```bash
+python reproduce.py build-expedia-h5 \
+  --csv data/raw/expedia/train.csv
 python reproduce.py preprocess-expedia \
   --h5 data/raw/expedia/preprocess_data_com.h5
 python reproduce.py fit-expedia --dataset expedia
@@ -24,7 +26,8 @@ python reproduce.py counterfactuals --dataset expedia
 
 The source data are available from the
 [Expedia competition page](https://www.kaggle.com/c/expedia-personalized-sort/data).
-Preprocessing uses the trial number as the Python shuffle seed. Full fitting
+The CSV-to-HDF5 stage contains no randomness. HDF5-to-MAT preprocessing uses
+the trial number as the Python shuffle seed. Full fitting
 uses MATLAB `twister` with base seed
 `42 + 1000*trial + market_index`, where the MMNL market order is
 `15,14,5,24,32`. SCM, SeqINV, NSMNL, MNL, and CMNL use offsets `+10`, `+20`,
