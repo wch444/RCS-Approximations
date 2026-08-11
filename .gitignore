@@ -1,7 +1,6 @@
-# External data, fitted parameters, and generated experiment outputs
+# External data and generated empirical experiment outputs
 data/
 data.nosync/
-opt_data/
 experiments/*/results/
 experiments/mixed_order_expedia/.mixed-order-analysis.lock
 logs/
@@ -15,6 +14,39 @@ logs/
 *.hdf5
 *.log
 nohup.out*
+
+# Published fitted grids and synthetic reference outputs
+opt_data/*
+!opt_data/expedia/
+!opt_data/trivago/
+opt_data/expedia/*
+opt_data/trivago/*
+!opt_data/expedia/fit_5_[1-9].mat
+!opt_data/expedia/fit_5_10.mat
+!opt_data/expedia/fit_14_[1-9].mat
+!opt_data/expedia/fit_14_10.mat
+!opt_data/expedia/fit_15_[1-9].mat
+!opt_data/expedia/fit_15_10.mat
+!opt_data/expedia/fit_24_[1-9].mat
+!opt_data/expedia/fit_24_10.mat
+!opt_data/expedia/fit_32_[1-9].mat
+!opt_data/expedia/fit_32_10.mat
+!opt_data/trivago/fit_BR_[1-9].mat
+!opt_data/trivago/fit_BR_10.mat
+!opt_data/trivago/fit_US_[1-9].mat
+!opt_data/trivago/fit_US_10.mat
+!opt_data/trivago/fit_JP_[1-9].mat
+!opt_data/trivago/fit_JP_10.mat
+!opt_data/trivago/fit_UK_[1-9].mat
+!opt_data/trivago/fit_UK_10.mat
+!opt_data/trivago/fit_DE_[1-9].mat
+!opt_data/trivago/fit_DE_10.mat
+!experiments/synthetic/results/
+experiments/synthetic/results/*
+!experiments/synthetic/results/synthetic_trial_level.csv
+!experiments/synthetic/results/synthetic_summary.csv
+!experiments/synthetic/results/paper_synthetic.csv
+!experiments/synthetic/results/synthetic_table.tex
 
 # Python, editors, and operating-system metadata
 __pycache__/
