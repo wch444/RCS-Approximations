@@ -32,20 +32,12 @@ MARKETS = MARKET_ORDER["expedia"]
 NON_MMNL_MODELS = [model for model in MODELS if model != "MMNL"]
 CORE_COLUMNS = ["Market", "Trial", "Model", *RESULT_METRICS]
 LEGACY_COLUMNS = CORE_COLUMNS
-MMNL_STATUS_COLUMNS = [
-    "Converged",
-    "HitIterationCap",
-    "TerminationReason",
-    "IterationsAccepted",
-]
-MMNL_COLUMNS = [*CORE_COLUMNS, *MMNL_STATUS_COLUMNS]
+MMNL_COLUMNS = CORE_COLUMNS
 MMNL_MEANS_COLUMNS = [
     "Market",
     "Model",
     *RESULT_METRICS,
     "NTasks",
-    "ConvergedTasks",
-    "CappedTasks",
 ]
 OUTPUT_TRIALS = "predictive_expedia_trials.csv"
 OUTPUT_MEANS = "predictive_expedia_means.csv"
@@ -93,7 +85,6 @@ UNIFIED_COMMON_FIELDS = {
     "test_sessions",
     "mmnl_components",
     "mmnl_estimator_version",
-    "mmnl_diagnostics",
     "scm_parameter_order",
     "data_file",
     "models",
@@ -145,28 +136,6 @@ def _integer_series(values: pd.Series, label: str) -> pd.Series:
         f"{label} must contain integers.",
     )
     return numeric.astype(int)
-
-
-def _boolean_series(values: pd.Series, label: str) -> pd.Series:
-    parsed: list[bool] = []
-    for value in values:
-        if isinstance(value, (bool, np.bool_)):
-            parsed.append(bool(value))
-        elif isinstance(value, (int, np.integer, float, np.floating)) and value in (
-            0,
-            1,
-        ):
-            parsed.append(bool(value))
-        elif isinstance(value, str) and value.strip().lower() in {
-            "true",
-            "false",
-            "1",
-            "0",
-        }:
-            parsed.append(value.strip().lower() in {"true", "1"})
-        else:
-            raise ValueError(f"{label} must contain logical values.")
-    return pd.Series(parsed, index=values.index, dtype=bool)
 
 
 def _validate_metrics(frame: pd.DataFrame, label: str) -> pd.DataFrame:
@@ -246,33 +215,6 @@ def validate_mmnl_trials(frame: pd.DataFrame) -> pd.DataFrame:
     _require(
         observed == expected, "MMNL trials must be the ordered canonical 50-task grid."
     )
-    checked["Converged"] = _boolean_series(checked["Converged"], "Converged")
-    checked["HitIterationCap"] = _boolean_series(
-        checked["HitIterationCap"], "HitIterationCap"
-    )
-    iterations = _integer_series(checked["IterationsAccepted"], "IterationsAccepted")
-    converged = checked["Converged"].to_numpy()
-    capped = checked["HitIterationCap"].to_numpy()
-    reasons = checked["TerminationReason"].astype(str).to_numpy()
-    _require(
-        np.logical_xor(converged, capped).all(),
-        "Every MMNL task must converge or hit the iteration cap.",
-    )
-    _require(
-        ((iterations >= 3) & (iterations <= 100)).all(),
-        "MMNL iterations must be between 3 and 100.",
-    )
-    _require(
-        (reasons[converged] == "consecutive_relative_nll_tolerance").all(),
-        "Converged MMNL reasons are invalid.",
-    )
-    _require(
-        (reasons[capped] == "maximum_iterations").all()
-        and (iterations.to_numpy()[capped] == 100).all(),
-        "Capped MMNL status is invalid.",
-    )
-    checked["TerminationReason"] = reasons
-    checked["IterationsAccepted"] = iterations
     return _validate_metrics(checked, "MMNL")
 
 
@@ -402,12 +344,6 @@ def _integer(value: Any, label: str) -> int:
     return int(scalar)
 
 
-def _logical(value: Any, label: str) -> bool:
-    scalar = _scalar(value, label)
-    _require(scalar in (0, 1, False, True), f"{label} must be logical.")
-    return bool(scalar)
-
-
 def _text(value: Any, label: str) -> str:
     scalar = _scalar(value, label)
     _require(
@@ -439,116 +375,11 @@ def _index_vector(value: Any, label: str) -> np.ndarray:
     return array.astype(int)
 
 
-def _validate_diagnostics(fit: dict[str, Any], row: pd.Series, label: str) -> None:
-    diagnostics = fit["mmnl_diagnostics"]
-    _require(
-        isinstance(diagnostics, dict),
-        f"{label} diagnostics must be a scalar structure.",
-    )
-    required = {
-        "algorithm",
-        "estimator_version",
-        "estimation_complete",
-        "fitted",
-        "converged",
-        "hit_iteration_cap",
-        "termination_reason",
-        "iterations_accepted",
-        "iterations_attempted",
-        "max_iterations",
-        "relative_tolerance",
-        "required_consecutive",
-        "consecutive",
-        "initial_train_nll",
-        "final_train_nll",
-        "train_nll_history",
-        "relative_nll_improvement_history",
-        "mstep_exitflag",
-        "mstep_beta_accepted",
-        "component_order",
-        "em_options",
-    }
-    _require(
-        required.issubset(diagnostics), f"{label} diagnostics schema is incomplete."
-    )
-    iterations = _integer(
-        diagnostics["iterations_accepted"], f"{label} accepted iterations"
-    )
-    converged = _logical(diagnostics["converged"], f"{label} converged")
-    capped = _logical(diagnostics["hit_iteration_cap"], f"{label} cap")
-    reason = _text(diagnostics["termination_reason"], f"{label} reason")
-    _require(
-        _logical(diagnostics["estimation_complete"], f"{label} complete")
-        and _logical(diagnostics["fitted"], f"{label} fitted")
-        and _text(diagnostics["algorithm"], f"{label} algorithm")
-        == "chosen_choice_generalized_em"
-        and _integer(diagnostics["estimator_version"], f"{label} estimator") == 2
-        and _integer(diagnostics["iterations_attempted"], f"{label} attempted")
-        == iterations
-        and _integer(diagnostics["max_iterations"], f"{label} maximum") == 100
-        and _integer(
-            diagnostics["required_consecutive"], f"{label} required consecutive"
-        )
-        == 3
-        and np.isclose(float(_scalar(diagnostics["relative_tolerance"], label)), 1e-7),
-        f"{label} diagnostic identity is invalid.",
-    )
-    _require(
-        converged == bool(row["Converged"])
-        and capped == bool(row["HitIterationCap"])
-        and reason == str(row["TerminationReason"])
-        and iterations == int(row["IterationsAccepted"]),
-        f"{label} fit status disagrees with its evaluation row.",
-    )
-    options = diagnostics["em_options"]
-    _require(
-        isinstance(options, dict)
-        and _integer(options.get("MaxIterations"), label) == 100
-        and np.isclose(float(_scalar(options.get("RelativeTolerance"), label)), 1e-7),
-        f"{label} diagnostic EM options are invalid.",
-    )
-    history = np.ravel(np.asarray(diagnostics["train_nll_history"], dtype=float))
-    relative = np.ravel(
-        np.asarray(diagnostics["relative_nll_improvement_history"], dtype=float)
-    )
-    exits = np.ravel(np.asarray(diagnostics["mstep_exitflag"], dtype=float))
-    accepted = np.ravel(np.asarray(diagnostics["mstep_beta_accepted"], dtype=float))
-    _require(
-        history.size == iterations + 1
-        and relative.size == exits.size == accepted.size == iterations,
-        f"{label} diagnostic histories have invalid lengths.",
-    )
-    _require(
-        np.isfinite(history).all()
-        and np.isfinite(relative).all()
-        and np.isfinite(exits).all()
-        and np.isin(accepted, [0, 1]).all(),
-        f"{label} diagnostic histories contain invalid values.",
-    )
-    _require(
-        np.all(np.diff(history) <= 1e-8 * (1 + np.abs(history[:-1]))),
-        f"{label} training NLL is not monotone.",
-    )
-    _require(
-        np.isclose(float(_scalar(diagnostics["initial_train_nll"], label)), history[0])
-        and np.isclose(
-            float(_scalar(diagnostics["final_train_nll"], label)), history[-1]
-        ),
-        f"{label} terminal diagnostic NLL is inconsistent.",
-    )
-    order = _index_vector(diagnostics["component_order"], f"{label} component order")
-    _require(
-        np.array_equal(np.sort(order), np.array([1, 2, 3])),
-        f"{label} component order is not a permutation.",
-    )
-
-
 def _check_fit(
     fit: dict[str, Any],
     market: str,
     trial: int,
     info: dict[str, int],
-    row: pd.Series,
 ) -> None:
     label = f"Unified fit {market}/{trial}"
     _require(
@@ -558,7 +389,7 @@ def _check_fit(
     expected_seed = 42 + 1000 * trial + MMNL_MARKET_SEED_INDEX[market]
     expected_file = f"data/processed/expedia/10k_sample_{market}_{trial}.mat"
     _require(
-        _integer(fit["schema_version"], label) == 1
+        _integer(fit["schema_version"], label) == 2
         and _text(fit["artifact_type"], label) == "unified_fit"
         and _text(fit["dataset"], label) == "expedia"
         and _text(fit["market"], label) == market
@@ -660,13 +491,11 @@ def _check_fit(
         and np.all(beta[zero_rows] == 0),
         f"{label} reduced/full parameters disagree.",
     )
-    _validate_diagnostics(fit, row, label)
 
 
 def validate_fits(
     fit_dir: Path,
     data: dict[tuple[str, int], dict[str, int]],
-    trials: pd.DataFrame,
 ) -> dict[Path, tuple[int, int, int, int]]:
     paths = _require_exact_grid(
         fit_dir,
@@ -675,16 +504,13 @@ def validate_fits(
         "Unified fit",
         reject_symlinks=True,
     )
-    indexed = trials.set_index(["Market", "Trial"])
     states: dict[Path, tuple[int, int, int, int]] = {}
     for path in paths:
         match = re.fullmatch(r"fit_(\d+)_(\d+)\.mat", path.name)
         assert match is not None
         market, trial = match.group(1), int(match.group(2))
         fit, state = _load_struct(path, "fit")
-        _check_fit(
-            fit, market, trial, data[(market, trial)], indexed.loc[(market, trial)]
-        )
+        _check_fit(fit, market, trial, data[(market, trial)])
         states[path] = state
     return states
 
@@ -705,8 +531,7 @@ def validate_mmnl_means(frame: pd.DataFrame, trials: pd.DataFrame) -> None:
     checked[RESULT_METRICS] = checked[RESULT_METRICS].apply(
         pd.to_numeric, errors="coerce"
     )
-    for column in ["NTasks", "ConvergedTasks", "CappedTasks"]:
-        checked[column] = _integer_series(checked[column], column)
+    checked["NTasks"] = _integer_series(checked["NTasks"], "NTasks")
     expected_metrics = (
         trials.groupby("Market", sort=False)[RESULT_METRICS].mean().reindex(MARKETS)
     )
@@ -717,24 +542,7 @@ def validate_mmnl_means(frame: pd.DataFrame, trials: pd.DataFrame) -> None:
         rtol=5e-15,
         atol=5e-12,
     )
-    expected_converged = (
-        trials.groupby("Market", sort=False)["Converged"]
-        .sum()
-        .reindex(MARKETS)
-        .to_numpy(int)
-    )
-    expected_capped = (
-        trials.groupby("Market", sort=False)["HitIterationCap"]
-        .sum()
-        .reindex(MARKETS)
-        .to_numpy(int)
-    )
-    _require(
-        (checked["NTasks"] == 10).all()
-        and np.array_equal(checked["ConvergedTasks"].to_numpy(), expected_converged)
-        and np.array_equal(checked["CappedTasks"].to_numpy(), expected_capped),
-        "MMNL means status counts are inconsistent.",
-    )
+    _require((checked["NTasks"] == 10).all(), "MMNL task counts are inconsistent.")
 
 
 def build(
@@ -867,7 +675,7 @@ def run(
     evaluator_means, means_state = _read_csv(means_path)
     validate_mmnl_means(evaluator_means, mmnl_checked)
     data_metadata, states = validate_data_grid(data_path)
-    states.update(validate_fits(fit_path, data_metadata, mmnl_checked))
+    states.update(validate_fits(fit_path, data_metadata))
     states.update(
         {legacy_path: legacy_state, mmnl_path: mmnl_state, means_path: means_state}
     )

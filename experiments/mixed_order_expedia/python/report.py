@@ -115,7 +115,6 @@ UNIFIED_COMMON_FIELDS = {
     "test_sessions",
     "mmnl_components",
     "mmnl_estimator_version",
-    "mmnl_diagnostics",
     "scm_parameter_order",
     "data_file",
     "models",
@@ -370,7 +369,7 @@ def _check_fit(
     expected_seed = 42 + 1000 * trial + MMNL_MARKET_SEED_INDEX[site]
     expected_data = f"data/processed/expedia/10k_sample_{site}_{trial}.mat"
     if (
-        _integer(fit["schema_version"], "fit.schema_version") != 1
+        _integer(fit["schema_version"], "fit.schema_version") != 2
         or _scalar_string(fit["artifact_type"], "fit.artifact_type") != "unified_fit"
         or _scalar_string(fit["dataset"], "fit.dataset") != "expedia"
         or _scalar_string(fit["market"], "fit.market") != str(site)
@@ -476,16 +475,6 @@ def _check_fit(
         or not np.all(beta[np.setdiff1d(np.arange(full_dim), reduced - 1)] == 0)
     ):
         raise ValueError(f"Unified fit full/reduced MMNL parameters disagree: {path}")
-    diagnostics = fit["mmnl_diagnostics"]
-    if (
-        not isinstance(diagnostics, dict)
-        or _integer(diagnostics.get("estimator_version"), "diagnostics version") != 2
-        or _integer(diagnostics.get("max_iterations"), "diagnostics cap") != 100
-        or not bool(
-            _integer(diagnostics.get("estimation_complete"), "diagnostics complete")
-        )
-    ):
-        raise ValueError(f"Unified fit MMNL diagnostics are invalid: {path}")
 
 
 def load_and_validate_provenance(

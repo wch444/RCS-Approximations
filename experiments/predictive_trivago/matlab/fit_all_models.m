@@ -89,7 +89,7 @@ for trial = trials
         n_component = 3;
         mmnl_alpha0 = ones(1, n_component) / n_component;
         mmnl_beta0 = rand(n_full, n_component);
-        [mmnl_alpha, mmnl_beta, ~, ~, ~, ~, ~, ~, mmnl_diagnostics] = ...
+        [mmnl_alpha, mmnl_beta] = ...
             Mix_MNL_EM_function(mmnl_alpha0, mmnl_beta0, ...
             config.feature_start, train_full, test_full, options, false, ...
             mmnl_em_options);
@@ -109,8 +109,7 @@ for trial = trials
         fit.matrix_columns = size(train_full, 2);
         fit.page_size = 10;
         fit.mmnl_components = n_component;
-        fit.mmnl_estimator_version = mmnl_diagnostics.estimator_version;
-        fit.mmnl_diagnostics = mmnl_diagnostics;
+        fit.mmnl_estimator_version = schema.mmnl_estimator_version;
         fit.scm_parameter_order = schema.scm_parameter_order;
         fit.data_file = fullfile('data', 'processed', char(config.name), data_name);
         fit.train_rows = size(train_full,1);
