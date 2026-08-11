@@ -24,6 +24,34 @@ def _require_expedia(dataset: str) -> None:
         raise ValueError("The Expedia workflow supports only Expedia.")
 
 
+def build_h5_from_csv(
+    csv_path: Path,
+    *,
+    output_path: Path = ROOT / "data" / "raw" / "expedia" / "preprocess_data_com.h5",
+    hdf_key: str = "data",
+    chunk_rows: int = 250_000,
+    overwrite: bool = False,
+) -> None:
+    """Build the historical HDF5 input from Kaggle ``train.csv``."""
+
+    arguments: list[object] = [
+        "--csv",
+        Path(csv_path).expanduser(),
+        "--output",
+        Path(output_path).expanduser(),
+        "--hdf-key",
+        hdf_key,
+        "--chunk-rows",
+        chunk_rows,
+    ]
+    if overwrite:
+        arguments.append("--overwrite")
+    run_module(
+        "experiments.predictive_expedia.python.preprocess.raw_to_h5",
+        *arguments,
+    )
+
+
 def preprocess_from_h5(
     h5_path: Path,
     *,

@@ -23,13 +23,16 @@ fits, and results are written only to paths ignored by Git.
 
 ## Expedia: exact run order
 
-The raw source is the
-[Expedia Personalized Sort competition](https://www.kaggle.com/c/expedia-personalized-sort/data).
-This workflow starts from a user-supplied fixed-format pandas HDF5 file named
-`preprocess_data_com.h5`, using HDF key `data` by default. Place it at
-`data/raw/expedia/preprocess_data_com.h5`, then run:
+Download `train.csv` from the
+[Expedia Personalized Sort competition](https://www.kaggle.com/c/expedia-personalized-sort/data)
+after accepting the competition rules. The first command reconstructs the
+historical fixed-format pandas HDF5 input, under key `data`; the second builds
+the corrected 50-file MATLAB sample grid:
 
 ```bash
+python reproduce.py build-expedia-h5 \
+  --csv data/raw/expedia/train.csv
+
 python reproduce.py preprocess-expedia \
   --h5 data/raw/expedia/preprocess_data_com.h5
 
@@ -39,6 +42,14 @@ python reproduce.py expedia-local-predictive
 
 python reproduce.py counterfactuals --dataset expedia
 ```
+
+The HDF5 build preserves the historical raw-data filter: keep rows with
+`10 < price_usd < 5000`, `srch_room_count == 1`, and
+`srch_length_of_stay <= 10`; retain the documented 20 columns; then drop rows
+with a missing retained value. This stage contains no random sampling. With the
+original Kaggle file, the logical HDF frame contains 8,938,178 rows in original
+CSV order with the filtered CSV index retained. HDF5 bytes may differ across
+pandas/PyTables versions even when the table values are the same.
 
 The preprocessing command removes complete queries with more than four clicks
 before it constructs position indicators or samples query IDs. Trial `i` uses
