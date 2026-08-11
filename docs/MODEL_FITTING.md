@@ -11,6 +11,9 @@ are six fitted model specifications per task.
 SCM vectors use `[beta; alpha]`, with attraction coefficients before attention
 coefficients.
 
+The fit files retain final parameter values, fixed seeds, and dimensions. They
+do not retain per-iteration MMNL histories or termination-status records.
+
 The complete Expedia and Trivago grids used for the reported experiments are
 included in the repository. The default reproduction workflow evaluates these
 bundled fits and does not repeat estimation.

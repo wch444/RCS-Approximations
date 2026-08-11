@@ -1,7 +1,7 @@
-function [alpha, beta, LL, score, error, error_1, mape, t1, diagnostics] = Mix_MNL_EM_function(alpha, beta, fea, train_data, test_data,options, test, em_options)
+function [alpha, beta, LL, score, error, error_1, mape, t1] = Mix_MNL_EM_function(alpha, beta, fea, train_data, test_data,options, test, em_options)
     %MIX_MNL_EM_FUNCTION Fit/evaluate finite-mixture MNL by session-level EM/GEM.
     %   ALPHA is weights, BETA is feature-by-component, and TEST selects evaluation.
-    %   Outputs include predictive metrics, runtime, and diagnostics.
+    %   Outputs include predictive metrics and runtime.
     tic;
     if nargin < 8
         em_options = [];
@@ -16,20 +16,8 @@ function [alpha, beta, LL, score, error, error_1, mape, t1, diagnostics] = Mix_M
             builtin('error','Mix_MNL_EM_function:InconsistentData', ...
                 'train_data and test_data must have the same columns.');
         end
-        [alpha,beta,diagnostics] = EM_MMNL_LL( ...
+        [alpha,beta] = EM_MMNL_LL( ...
             alpha,beta,train_data,fea,options,em_config);
-    else
-        diagnostics = struct( ...
-            'estimator_version', 2, ...
-            'algorithm', 'chosen_choice_generalized_em', ...
-            'fitted', false, ...
-            'max_iterations', em_config.MaxIterations, ...
-            'relative_tolerance', em_config.RelativeTolerance, ...
-            'required_consecutive', 3, ...
-            'consecutive', 0, ...
-            'estimation_complete', false, ...
-            'hit_iteration_cap', false, ...
-            'em_options', em_config);
     end
 
     LL = MMNL_LL(alpha,beta, fea, test_data);
@@ -39,7 +27,7 @@ function [alpha, beta, LL, score, error, error_1, mape, t1, diagnostics] = Mix_M
 end
 
 
-function [alpha, beta, diagnostics] = EM_MMNL_LL( ...
+function [alpha, beta] = EM_MMNL_LL( ...
         alpha,beta,data,fea,options,em_config)
     max_em_iterations = em_config.MaxIterations;
     relative_tolerance = em_config.RelativeTolerance;
@@ -47,14 +35,6 @@ function [alpha, beta, diagnostics] = EM_MMNL_LL( ...
     consecutive = 0;
     group = findgroups(data(:,1));
     current_nll = LL_mixed_mmnl(beta,alpha,data,fea,group);
-    nll_history = nan(max_em_iterations + 1,1);
-    nll_history(1) = current_nll;
-    mstep_exitflag = nan(max_em_iterations,1);
-    mstep_beta_accepted = false(max_em_iterations,1);
-    relative_improvement_history = nan(max_em_iterations,1);
-    iterations_accepted = 0;
-    converged = false;
-    termination_reason = 'maximum_iterations';
 
     if isempty(options)
         options = optimoptions('fminunc', 'Display', 'off');
@@ -77,8 +57,6 @@ function [alpha, beta, diagnostics] = EM_MMNL_LL( ...
             @(candidate)LL_weight_mmnl( ...
                 candidate,responsibility,data,fea,group), ...
             beta,mstep_options);
-        mstep_exitflag(iteration) = exit_flag;
-
         % fminunc may stop before finding an improving M-step.  Retaining
         % the old beta still gives a valid generalized-EM update through
         % alpha, whereas accepting a larger Q would forfeit monotonicity.
@@ -87,8 +65,6 @@ function [alpha, beta, diagnostics] = EM_MMNL_LL( ...
                 || ~isfinite(q_after) ...
                 || q_after > q_before + q_tolerance
             beta_candidate = beta;
-        else
-            mstep_beta_accepted(iteration) = true;
         end
 
         candidate_nll = LL_mixed_mmnl( ...
@@ -104,7 +80,6 @@ function [alpha, beta, diagnostics] = EM_MMNL_LL( ...
         elseif improvement < 0
             % Ignore a roundoff-sized increase; the previous iterate is the
             % monotone solution returned to the caller.
-            termination_reason = 'roundoff_guard';
             break
         end
 
@@ -113,10 +88,6 @@ function [alpha, beta, diagnostics] = EM_MMNL_LL( ...
         alpha = alpha_candidate;
         beta = beta_candidate;
         current_nll = candidate_nll;
-        iterations_accepted = iterations_accepted + 1;
-        nll_history(iterations_accepted + 1) = current_nll;
-        relative_improvement_history(iterations_accepted) = ...
-            relative_improvement;
 
         if relative_improvement <= relative_tolerance
             consecutive = consecutive + 1;
@@ -124,8 +95,6 @@ function [alpha, beta, diagnostics] = EM_MMNL_LL( ...
             consecutive = 0;
         end
         if consecutive >= required_consecutive
-            converged = true;
-            termination_reason = 'consecutive_relative_nll_tolerance';
             break
         end
     end
@@ -145,33 +114,6 @@ function [alpha, beta, diagnostics] = EM_MMNL_LL( ...
     alpha = alpha(component_order);
     beta = beta(:,component_order);
 
-    hit_iteration_cap = strcmp( ...
-        termination_reason,'maximum_iterations') ...
-        && iteration == max_em_iterations;
-    estimation_complete = converged || hit_iteration_cap;
-    diagnostics = struct();
-    diagnostics.estimator_version = 2;
-    diagnostics.algorithm = 'chosen_choice_generalized_em';
-    diagnostics.fitted = true;
-    diagnostics.converged = converged;
-    diagnostics.termination_reason = termination_reason;
-    diagnostics.iterations_attempted = iteration;
-    diagnostics.iterations_accepted = iterations_accepted;
-    diagnostics.max_iterations = max_em_iterations;
-    diagnostics.relative_tolerance = relative_tolerance;
-    diagnostics.required_consecutive = required_consecutive;
-    diagnostics.consecutive = consecutive;
-    diagnostics.estimation_complete = estimation_complete;
-    diagnostics.hit_iteration_cap = hit_iteration_cap;
-    diagnostics.em_options = em_config;
-    diagnostics.initial_train_nll = nll_history(1);
-    diagnostics.final_train_nll = current_nll;
-    diagnostics.train_nll_history = nll_history(1:iterations_accepted + 1);
-    diagnostics.relative_nll_improvement_history = ...
-        relative_improvement_history(1:iterations_accepted);
-    diagnostics.mstep_exitflag = mstep_exitflag(1:iteration);
-    diagnostics.mstep_beta_accepted = mstep_beta_accepted(1:iteration);
-    diagnostics.component_order = component_order(:).';
 end
 
 

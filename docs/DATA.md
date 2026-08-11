@@ -70,9 +70,9 @@ standardization. It writes the five-market by ten-trial grid under
 Both complete 5-by-10 fitted grids are distributed under
 `opt_data/<dataset>/`. Expedia uses its numeric site as the market key. Each
 `fit_<market>_<trial>.mat` contains one top-level `fit` structure whose
-`models` field stores the six model specifications. The files contain fitted
-parameters, fixed seeds, dimensions, and optimization diagnostics, but no raw
-observations.
+`models` field stores the six model specifications. The files contain final
+parameter estimates, fixed seeds, and dimensions, but no raw observations or
+per-iteration optimization histories.
 
 ## Synthetic reference outputs
 

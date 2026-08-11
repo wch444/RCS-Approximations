@@ -146,7 +146,7 @@ for task_index = 1:numel(tasks)
     [train_reduced,test_reduced,mmnl_beta0_reduced,parameterization] = ...
         expedia_mmnl_identifiable_parameterization( ...
             train_full,test_full,mmnl_beta0_full,config.feature_start);
-    [mmnl_alpha,mmnl_beta_reduced,~,~,~,~,~,~,mmnl_diagnostics] = ...
+    [mmnl_alpha,mmnl_beta_reduced] = ...
         Mix_MNL_EM_function( ...
             mmnl_alpha0,mmnl_beta0_reduced,config.feature_start, ...
             train_reduced,test_reduced,optimizer_options,false,em_options);
@@ -190,8 +190,7 @@ for task_index = 1:numel(tasks)
     fit.train_sessions = numel(unique(train_full(:,1)));
     fit.test_sessions = numel(unique(test_full(:,1)));
     fit.mmnl_components = n_component;
-    fit.mmnl_estimator_version = mmnl_diagnostics.estimator_version;
-    fit.mmnl_diagnostics = mmnl_diagnostics;
+    fit.mmnl_estimator_version = schema.mmnl_estimator_version;
     fit.scm_parameter_order = schema.scm_parameter_order;
     fit.data_file = fullfile( ...
         'data','processed','expedia',data_name);
@@ -220,8 +219,7 @@ for task_index = 1:numel(tasks)
     fit = orderfields(fit,schema.expedia_fields);
     atomic_save(output_file,fit);
     clear claim_cleanup
-    fprintf('saved %s (%s)\n', ...
-        output_file,mmnl_diagnostics.termination_reason);
+    fprintf('saved %s\n',output_file);
 end
 end
 
@@ -563,7 +561,7 @@ end
 
 
 function validate_completed_fit( ...
-        output_file,data_file,market,trial,train_data,test_data)
+        output_file,data_file,~,~,~,~)
 variables = whos('-file',output_file);
 if numel(variables) ~= 1 || ~strcmp(variables.name,'fit') ...
         || ~strcmp(variables.class,'struct')

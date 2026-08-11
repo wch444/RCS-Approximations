@@ -125,8 +125,9 @@ LaTeX table. Re-running the command should reproduce these files.
 
 Each unified fit contains SCM, MNL, MMNL, CMNL, SeqINV, and NSMNL parameters
 for one market/trial task. SCM parameters use `[beta; alpha]`, with attraction
-coefficients first and attention coefficients second. All maintained fitting,
-evaluation, counterfactual, and synthetic stages use fixed task-level seeds;
+coefficients first and attention coefficients second. MMNL artifacts retain
+the final weights and coefficients, not per-iteration histories. All maintained
+fitting, evaluation, counterfactual, and synthetic stages use fixed task-level seeds;
 the formulas are listed in [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
 
 Additional contracts are documented in [docs/DATA.md](docs/DATA.md),
