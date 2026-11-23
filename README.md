@@ -121,3 +121,13 @@ python reproduce.py synthetic
 The checked-in outputs are under `experiments/synthetic/results/`: 18,000
 trial rows, their aggregate summary, the paper-value CSV, and the generated
 LaTeX table. Re-running the command should reproduce these files.
+
+## Numerical upper-bound curve
+
+The numerical construction for the upper-bound curve, including the value
+approximately `0.407` at `n = 15`, is in
+[`experiments/worst_ratio/`](experiments/worst_ratio/README.md).
+
+```matlab
+run('experiments/worst_ratio/matlab/worst_ratio.m')
+```

@@ -9,6 +9,7 @@ experiments/
   mixed_order_expedia/{matlab,python}
   counterfactual_trivago/{matlab,python}
   synthetic/{matlab,python}
+  worst_ratio/matlab
 ```
 
 Each experiment contains its numerical producer or evaluator under `matlab/`
