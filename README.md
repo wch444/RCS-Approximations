@@ -9,9 +9,6 @@ processed matrices, and generated empirical results are not bundled.
 
 1. Pin Gao, Yicheng Liu, Chenhao Wang, Zizhuo Wang. 2026+. **RCS Approximations for Assortment Optimization with Sequential Consumer Behavior.** *Manufacturing & Service Operations Management.*
 
-The repository publishes computational code, fitted parameters, and generated
-result fragments. Full manuscript TeX sources are not included.
-
 ## Requirements
 
 - MATLAB R2023b with Optimization Toolbox, Statistics and Machine Learning
@@ -26,16 +23,11 @@ conda activate scm-repro-2026
 python reproduce.py --help
 ```
 
-All commands below must also be run from the repository root. Generated raw
-and processed data and empirical result bundles are written only to paths
-ignored by Git. The fitted grids and synthetic outputs described below are
-versioned files.
-
 ## Expedia: exact run order
 
 Download `train.csv` from the
-[Expedia Personalized Sort competition](https://www.kaggle.com/c/expedia-personalized-sort/data)
-after accepting the competition rules. The first command reconstructs the
+[Expedia Personalized Sort competition](https://www.kaggle.com/c/expedia-personalized-sort/data).
+The first command reconstructs the
 historical fixed-format pandas HDF5 input, under key `data`; the second builds
 the corrected 50-file MATLAB sample grid:
 
@@ -129,20 +121,3 @@ python reproduce.py synthetic
 The checked-in outputs are under `experiments/synthetic/results/`: 18,000
 trial rows, their aggregate summary, the paper-value CSV, and the generated
 LaTeX table. Re-running the command should reproduce these files.
-
-## Bundled inputs and generated outputs
-
-- Processed empirical matrices: `data/processed/<dataset>/`
-- Bundled unified fitted parameters: `opt_data/<dataset>/`
-- Experiment outputs: `experiments/<experiment>/results/`
-
-Each unified fit contains SCM, MNL, MMNL, CMNL, SeqINV, and NSMNL parameters
-for one market/trial task. SCM parameters use `[beta; alpha]`, with attraction
-coefficients first and attention coefficients second. MMNL artifacts retain
-the final weights and coefficients, not per-iteration histories. All maintained
-fitting, evaluation, counterfactual, and synthetic stages use fixed task-level seeds;
-the formulas are listed in [docs/REPRODUCIBILITY.md](docs/REPRODUCIBILITY.md).
-
-Additional contracts are documented in [docs/DATA.md](docs/DATA.md),
-[docs/MODEL_FITTING.md](docs/MODEL_FITTING.md), and
-[docs/CODE_LAYOUT.md](docs/CODE_LAYOUT.md).
