@@ -14,7 +14,7 @@ and place it at:
 data/raw/expedia/train.csv
 ```
 
-`python reproduce.py build-expedia-h5 --csv data/raw/expedia/train.csv`
+`python -m experiments.predictive_expedia.python.preprocess.raw_to_h5 --csv data/raw/expedia/train.csv --output data/raw/expedia/preprocess_data_com.h5`
 reconstructs `data/raw/expedia/preprocess_data_com.h5`. It applies the recovered
 historical row filters `10 < price_usd < 5000`, `srch_room_count == 1`, and
 `srch_length_of_stay <= 10`, retains the following columns in order, and then

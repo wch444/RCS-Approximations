@@ -11,8 +11,8 @@ if nargin < 1 || isempty(dataset_name), dataset_name = "trivago"; end
 config = dataset_config(dataset_name);
 if config.name ~= "trivago"
     error('evaluate_all_models:UnsupportedDataset', ...
-        ['This evaluator supports only Trivago. Use the Expedia ' ...
-         'expedia-local-predictive workflow.']);
+        ['The canonical all-model evaluator supports only Trivago.  Use the ' ...
+         'separate archived Expedia evaluation workflow.']);
 end
 if nargin < 2 || isempty(markets), markets = config.markets; end
 if nargin < 3 || isempty(trials), trials = 1:10; end
@@ -56,7 +56,8 @@ for trial = trials
         require_file(fit_file);
         D = load(data_file, 'data_test');
         F = load(fit_file, 'fit');
-        fit_models = F.fit.models;
+        fit_models = validate_unified_fit( ...
+            F.fit,'trivago',market,trial,[],D.data_test);
         test_full = D.data_test;
         validate_matrix(test_full, config);
         test_short = test_full(:, 1:config.feature_end);

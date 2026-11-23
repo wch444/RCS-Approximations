@@ -20,13 +20,14 @@ bundled fits and does not repeat estimation.
 
 ## Expedia
 
-`python reproduce.py fit-expedia --dataset expedia` fits all six models for the
-corrected Expedia matrices. The default run covers all five sites and all ten
-trials; `--markets`, `--trials`, `--shard-index`, and `--shard-count` select a
-deterministic subset. `--resume` checks and skips already completed task files.
-For a full re-estimation, use a disposable clone/worktree and first move the
-bundled `opt_data/expedia/` directory aside; a normal run refuses to overwrite
-existing task files. `--resume` is only for a newly started incomplete grid.
+`python reproduce.py fit-expedia --dataset expedia --data-dir ... --fit-dir ...`
+fits all six models for corrected Expedia matrices. Both explicit staging
+directories must be outside `data/processed/expedia/` and `opt_data/expedia/`;
+fresh fits are written to the staged fit directory. The default run covers
+all five sites and all ten trials; `--markets`, `--trials`, `--shard-index`, and
+`--shard-count` select a deterministic subset. `--resume` validates and skips
+completed staged tasks. Review complete data and fit grids before deliberately
+promoting them for evaluation.
 
 The five non-MMNL objectives are smooth and unconstrained and use MATLAB
 `fminunc`. The three-component MMNL uses the maintained stable log-domain

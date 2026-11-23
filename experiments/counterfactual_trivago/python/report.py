@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the Trivago model-misspecification table from task aggregates."""
+"""Build the Trivago table of mean session-level gains from task aggregates."""
 
 from __future__ import annotations
 
@@ -40,8 +40,13 @@ TABLE_FILE = "counterfactual_trivago_table.tex"
 REPORT_LOCK_FILE = ".counterfactual-trivago-report.lock"
 
 
-def pooled(frame: pd.DataFrame, revenue: str) -> float:
-    return 100.0 * (frame[revenue].sum() / frame["PlatformRevenue"].sum() - 1.0)
+def mean_session_improvement(frame: pd.DataFrame, ratio: str) -> float:
+    """Return the equally weighted mean percentage improvement per session."""
+
+    weighted_ratio = (frame[ratio] * frame["NQueries"]).sum() / frame[
+        "NQueries"
+    ].sum()
+    return 100.0 * (weighted_ratio - 1.0)
 
 
 def _validated_tasks(frame: pd.DataFrame) -> pd.DataFrame:
@@ -135,8 +140,12 @@ def build(frame: pd.DataFrame) -> tuple[pd.DataFrame, str]:
                 {
                     "Market": market,
                     "Model": model,
-                    "GImprovementPct": pooled(block, "GRevenue"),
-                    "WImprovementPct": pooled(block, "WRevenue"),
+                    "GImprovementPct": mean_session_improvement(
+                        block, "MeanGRatio"
+                    ),
+                    "WImprovementPct": mean_session_improvement(
+                        block, "MeanWRatio"
+                    ),
                     "NQueries": int(block["NQueries"].sum()),
                 }
             )

@@ -81,7 +81,8 @@ for site_index = 1:numel(sites)
         end
 
         data_test = validate_data_test(D.data_test,feature_end,site,trial);
-        models = P.fit.models;
+        models = validate_unified_fit( ...
+            P.fit,'expedia',string(site),trial,[],data_test);
         scm = models.scm;
         if ~isnumeric(scm) || ~isreal(scm) || any(~isfinite(scm)) ...
                 || numel(scm) ~= 2 * (feature_end - feature_start + 1)

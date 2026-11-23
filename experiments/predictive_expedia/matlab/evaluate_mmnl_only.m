@@ -105,7 +105,8 @@ if ~isstruct(artifact) || ~isscalar(artifact) ...
         'Artifact must contain one scalar fit structure.');
 end
 fit = artifact.fit;
-models = fit.models;
+models = validate_unified_fit( ...
+    fit,'expedia',market,trial,data_train,data_test);
 matrix_columns = size(data_test,2);
 expected_seed = paper_mmnl_seed(config.name, market, trial);
 n_feature = matrix_columns-config.feature_start+1;
@@ -154,7 +155,7 @@ valid_parameterization = ...
 if ~valid_parameterization
     error('evaluate_mmnl_only:InvalidFit', ...
         ['MMNL-only parameterization metadata or reduced initialization ' ...
-         'does not match the fitted training design.']);
+         'does not match the archived training design.']);
 end
 
 valid_parameters = isnumeric(fit.mmnl_beta_reduced) ...
@@ -286,7 +287,7 @@ end
 function require_file(path)
 if ~isfile(path)
     error('evaluate_mmnl_only:MissingFile', ...
-        'Missing required matrix or unified fit: %s',path);
+        'Missing required archived matrix or unified fit: %s',path);
 end
 end
 

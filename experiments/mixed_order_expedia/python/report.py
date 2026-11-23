@@ -27,8 +27,10 @@ from scipy.io import loadmat
 from common.python.runtime import ROOT
 
 
+BASE = ROOT
 EXPERIMENT_ROOT = Path(__file__).resolve().parents[1]
 RECORD = EXPERIMENT_ROOT / "results"
+PAPER_FIGURES = BASE / "new" / "figures"
 
 SITES = (5, 14, 15, 24, 32)
 FULL_TRIALS = tuple(range(1, 11))
@@ -348,7 +350,7 @@ def _numeric_array(value: object, label: str) -> np.ndarray:
     return array.astype(float, copy=False)
 
 
-def _check_fit(
+def _validate_unified_fit(
     path: Path,
     *,
     site: int,
@@ -679,7 +681,7 @@ def load_and_validate_provenance(
                 f"{label} query diagnostics mismatch: recorded "
                 f"{recorded_diagnostics}, recomputed {recomputed_recorded_fields}."
             )
-        _check_fit(
+        _validate_unified_fit(
             fit_path,
             site=site,
             trial=trial,
@@ -1325,7 +1327,7 @@ def run_analysis(
     sites: Sequence[int] = SITES,
     trials: Sequence[int] | None = None,
     queries_per_task: int | None = None,
-    paper_figure_dir: Path | None = None,
+    paper_figure_dir: Path | None = PAPER_FIGURES,
 ) -> dict[str, object]:
     if mode not in {"full", "smoke"}:
         raise ValueError("mode must be 'full' or 'smoke'.")
@@ -1493,6 +1495,11 @@ def parse_args(argv: Iterable[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--mode", choices=("full", "smoke"), default="full")
     parser.add_argument("--input", type=Path)
     parser.add_argument("--output-dir", type=Path, default=RECORD)
+    parser.add_argument(
+        "--no-paper-figures",
+        action="store_true",
+        help="Do not copy full-run PDFs into new/figures.",
+    )
     return parser.parse_args(argv)
 
 
@@ -1505,11 +1512,12 @@ def main(argv: Iterable[str] | None = None) -> None:
             else "mixed_order_results_smoke"
         )
         args.input = RECORD / f"{stem}.csv"
+    paper_dir = None if args.no_paper_figures else PAPER_FIGURES
     result = run_analysis(
         args.input,
         args.output_dir,
         mode=args.mode,
-        paper_figure_dir=None,
+        paper_figure_dir=paper_dir,
     )
     overall = result["overall"]
     print(

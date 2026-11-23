@@ -375,7 +375,7 @@ def _index_vector(value: Any, label: str) -> np.ndarray:
     return array.astype(int)
 
 
-def _check_fit(
+def _validate_unified_fit(
     fit: dict[str, Any],
     market: str,
     trial: int,
@@ -510,7 +510,7 @@ def validate_fits(
         assert match is not None
         market, trial = match.group(1), int(match.group(2))
         fit, state = _load_struct(path, "fit")
-        _check_fit(fit, market, trial, data[(market, trial)])
+        _validate_unified_fit(fit, market, trial, data[(market, trial)])
         states[path] = state
     return states
 

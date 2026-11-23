@@ -17,13 +17,13 @@ RESULTS_DIR = ROOT / "experiments" / EXPERIMENT / "results"
 def _require_trivago(dataset: str, stage: str) -> None:
     if dataset != "trivago":
         alternative = (
-            "fit-expedia --dataset expedia"
+            "fit-mmnl --dataset expedia"
             if stage == "fit"
             else "expedia-local-predictive"
         )
         raise ValueError(
-            f"The {stage} stage supports only Trivago. "
-            f"Use {alternative} for Expedia."
+            f"The canonical {stage} stage supports only Trivago. "
+            f"Use {alternative} for the archived Expedia matrices."
         )
 
 
@@ -41,7 +41,7 @@ def preprocess(dataset: str = "trivago") -> None:
 
 
 def fit(dataset: str = "trivago") -> None:
-    """Fit all six Trivago model estimates."""
+    """Refit and replace all six canonical Trivago model estimates."""
 
     _require_trivago(dataset, "fit")
     matlab(EXPERIMENT, "fit_all_models('trivago');")
@@ -49,7 +49,7 @@ def fit(dataset: str = "trivago") -> None:
 
 
 def evaluate(dataset: str = "trivago") -> None:
-    """Evaluate the complete Trivago fitted grid."""
+    """Evaluate the complete retained Trivago fitted grid."""
 
     _require_trivago(dataset, "evaluate")
     require_fit_grid("trivago")
@@ -57,7 +57,7 @@ def evaluate(dataset: str = "trivago") -> None:
 
 
 def tables(dataset: str = "trivago") -> None:
-    """Publish Trivago tables from the complete evaluation output."""
+    """Validate Trivago evaluation outputs and publish paper tables."""
 
     _require_trivago(dataset, "tables")
     run_module(

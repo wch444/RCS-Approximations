@@ -44,7 +44,8 @@ function summary = revenue_misspec_trivago(models, plats, trials, max_queries)
 % Output: experiments/counterfactual_trivago/results/counterfactual_trivago.csv,
 % one aggregate row per model/market/trial. No query or session identifier is
 % written. Each row
-% records the evaluated and unique-query counts and aggregate revenues.
+% records the evaluated and unique-query counts, aggregate revenues, and the
+% equally weighted mean session-level revenue ratios.
 %
 % Usage:
 %   revenue_misspec_trivago                                  % all models/markets/trials
@@ -359,7 +360,8 @@ function th = load_params(X,fit_file,expected_market,expected_trial,data_test)
         error('revenue_misspec_trivago:InvalidFit', ...
             'Fit MAT must contain one scalar fit structure: %s.',fit_file);
     end
-    models = S.fit.models;
+    models = validate_unified_fit( ...
+        S.fit,'trivago',expected_market,expected_trial,[],data_test);
     switch X
         case "SCM"   % reference: reproduces the Section 6.2 result (validates pipeline)
             th.beta = models.scm;

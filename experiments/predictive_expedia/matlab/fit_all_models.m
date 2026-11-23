@@ -1,9 +1,9 @@
 function output_files = fit_all_models(dataset_name, markets, trials, varargin)
-%FIT_ALL_MODELS Fit all six Expedia models into one explicit output folder.
+%FIT_ALL_MODELS Fit all six Expedia models into an isolated staging folder.
 %   FIT_ALL_MODELS('expedia',MARKETS,TRIALS,'DataDir',DATA_DIR,
 %   'FitDir',FIT_DIR) fits SCM, MNL, MMNL, CMNL, SeqINV, and NSMNL for the
-%   requested market/trial cross product. DATA_DIR and FIT_DIR are required
-%   explicitly and must be separate, non-nested directories.
+%   requested market/trial cross product.  DATA_DIR and FIT_DIR are required
+%   explicitly; FIT_DIR must be outside the canonical opt_data/expedia tree.
 %
 %   Name-value options ShardIndex and ShardCount select a deterministic
 %   subset of the canonical 50 tasks.  Resume=true validates and skips an
@@ -27,6 +27,20 @@ options = parse_options(varargin,root);
 tasks = select_tasks( ...
     markets,trials,config,options.ShardIndex,options.ShardCount);
 
+canonical_fit_dir = fullfile(root,'opt_data','expedia');
+canonical_data_dir = fullfile(root,'data','processed','expedia');
+protected_paths = {canonical_fit_dir,canonical_data_dir};
+for protected_index = 1:numel(protected_paths)
+    protected = protected_paths{protected_index};
+    if same_path(options.FitDir,protected) ...
+            || path_is_within(options.FitDir,protected) ...
+            || same_path(options.DataDir,protected) ...
+            || path_is_within(options.DataDir,protected)
+        error('fit_all_models:UnsafeStagingPath', ...
+            ['Fresh Expedia data and fits must remain outside the canonical ' ...
+             'data/processed/expedia and opt_data/expedia trees.']);
+    end
+end
 if same_path(options.DataDir,options.FitDir) ...
         || path_is_within(options.DataDir,options.FitDir) ...
         || path_is_within(options.FitDir,options.DataDir)
@@ -135,9 +149,9 @@ for task_index = 1:numel(tasks)
         init_full,100,config.feature_start,train_full,test_full, ...
         optimizer_options,false);
 
-    % Keep the identified Expedia MMNL initialization and estimator path.
-    % Reset the paper seed before drawing beta0_full so prior model fits
-    % cannot change the MMNL stream.
+    % Keep the identified Expedia MMNL initialization and estimator path
+    % identical to fit_mmnl_only.  In particular, reset the paper seed before
+    % drawing beta0_full so prior model fits cannot change the MMNL stream.
     fprintf('[expedia %s trial %d] fitting MMNL\n',market,trial);
     mmnl_seed = paper_mmnl_seed(config.name,market,trial);
     rng(mmnl_seed,'twister');
@@ -217,6 +231,8 @@ for task_index = 1:numel(tasks)
     fit.mmnl_beta_reduced = mmnl_beta_reduced;
     fit.models = models;
     fit = orderfields(fit,schema.expedia_fields);
+    validate_unified_fit( ...
+        fit,'expedia',market,trial,train_full,test_full);
     atomic_save(output_file,fit);
     clear claim_cleanup
     fprintf('saved %s\n',output_file);
@@ -248,8 +264,8 @@ options = parser.Results;
 if strlength(string(options.DataDir)) == 0 ...
         || strlength(string(options.FitDir)) == 0
     error('fit_all_models:ExplicitPathsRequired', ...
-        ['DataDir and FitDir are required. Use separate paths for corrected ' ...
-         'matrices and fresh fitted artifacts.']);
+        ['DataDir and FitDir are required.  Use separate staging paths ' ...
+         'for corrected matrices and fresh fitted artifacts.']);
 end
 options.DataDir = resolve_path(root,options.DataDir);
 options.FitDir = resolve_path(root,options.FitDir);
@@ -473,8 +489,8 @@ for index = 1:numel(tasks)
     end
     if isfile(output_file) && ~resume
         error('fit_all_models:OutputExists', ...
-            ['A requested fit output already exists. Use Resume=true to ' ...
-             'check and skip completed tasks: %s'], ...
+            ['A requested staging output already exists.  Use Resume=true ' ...
+             'to validate and skip completed tasks: %s'], ...
             output_file);
     end
 end
@@ -561,12 +577,12 @@ end
 
 
 function validate_completed_fit( ...
-        output_file,data_file,~,~,~,~)
+        output_file,data_file,market,trial,train_data,test_data)
 variables = whos('-file',output_file);
 if numel(variables) ~= 1 || ~strcmp(variables.name,'fit') ...
         || ~strcmp(variables.class,'struct')
     error('fit_all_models:InvalidExistingFit', ...
-        'Existing MAT must contain only the fit struct: %s', ...
+        'Existing staging MAT must contain only the fit struct: %s', ...
         output_file);
 end
 data_info = dir(data_file);
@@ -581,13 +597,15 @@ payload = load(output_file,'fit');
 if ~isfield(payload,'fit') || ~isstruct(payload.fit) ...
         || ~isscalar(payload.fit)
     error('fit_all_models:InvalidExistingFit', ...
-        'Existing MAT must contain one scalar fit: %s',output_file);
+        'Existing staging MAT must contain one scalar fit: %s',output_file);
 end
-if ~isfield(payload.fit,'models') || ~isstruct(payload.fit.models) ...
-        || ~isscalar(payload.fit.models)
+try
+    validate_unified_fit( ...
+        payload.fit,'expedia',market,trial,train_data,test_data);
+catch exception
     error('fit_all_models:InvalidExistingFit', ...
-        'Existing fit must contain one scalar models structure: %s', ...
-        output_file);
+        'Existing staging fit failed validation (%s): %s', ...
+        output_file,exception.message);
 end
 end
 

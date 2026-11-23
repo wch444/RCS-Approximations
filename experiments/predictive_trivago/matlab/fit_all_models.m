@@ -13,8 +13,8 @@ config = dataset_config(dataset_name);
 schema = unified_fit_schema();
 if config.name ~= "trivago"
     error('fit_all_models:UnsupportedDataset', ...
-        ['This entry point supports only Trivago. Use the Expedia ' ...
-         'fit-expedia workflow to estimate all six Expedia models.']);
+        ['The all-model fitting workflow supports only Trivago.  Expedia ' ...
+         'uses fit_mmnl_only so retained non-MMNL estimates are unchanged.']);
 end
 if nargin < 2 || isempty(markets), markets = config.markets; end
 if nargin < 3 || isempty(trials), trials = 1:10; end
@@ -130,6 +130,9 @@ for trial = trials
                 'The unified model parameter fields are not canonical.');
         end
         fit = orderfields(fit,schema.trivago_fields);
+        validate_unified_fit( ...
+            fit,'trivago',market,trial,train_full,test_full);
+
         output_name = sprintf('fit_%s_%d.mat', char(market), trial);
         output_file = fullfile(fit_dir, output_name);
         temporary_file = string(tempname(fit_dir)) + ".mat";

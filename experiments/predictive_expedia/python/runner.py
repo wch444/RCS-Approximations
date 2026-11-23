@@ -1,4 +1,4 @@
-"""Run Expedia preprocessing, fitting, and predictive evaluation stages."""
+"""Run Expedia fitting and predictive evaluation stages."""
 
 from __future__ import annotations
 
@@ -24,63 +24,12 @@ def _require_expedia(dataset: str) -> None:
         raise ValueError("The Expedia workflow supports only Expedia.")
 
 
-def build_h5_from_csv(
-    csv_path: Path,
-    *,
-    output_path: Path = ROOT / "data" / "raw" / "expedia" / "preprocess_data_com.h5",
-    hdf_key: str = "data",
-    chunk_rows: int = 250_000,
-    overwrite: bool = False,
-) -> None:
-    """Build the historical HDF5 input from Kaggle ``train.csv``."""
+def fit_mmnl(dataset: str = "expedia") -> None:
+    """Refit only the MMNL fields in the unified Expedia fitted grid."""
 
-    arguments: list[object] = [
-        "--csv",
-        Path(csv_path).expanduser(),
-        "--output",
-        Path(output_path).expanduser(),
-        "--hdf-key",
-        hdf_key,
-        "--chunk-rows",
-        chunk_rows,
-    ]
-    if overwrite:
-        arguments.append("--overwrite")
-    run_module(
-        "experiments.predictive_expedia.python.preprocess.raw_to_h5",
-        *arguments,
-    )
-
-
-def preprocess_from_h5(
-    h5_path: Path,
-    *,
-    output_dir: Path = ROOT / "data" / "processed" / "expedia",
-    hdf_key: str = "data",
-    markets: Sequence[str] = EXPEDIA_MARKETS,
-    trials: Sequence[int] = tuple(range(1, 11)),
-    overwrite: bool = False,
-) -> None:
-    """Build corrected Expedia MAT files from a user-supplied HDF5 file."""
-
-    arguments: list[object] = [
-        "--h5",
-        Path(h5_path).expanduser(),
-        "--output-dir",
-        Path(output_dir).expanduser(),
-        "--hdf-key",
-        hdf_key,
-        "--sites",
-        *markets,
-        "--trials",
-        *trials,
-    ]
-    if overwrite:
-        arguments.append("--overwrite")
-    run_module(
-        "experiments.predictive_expedia.python.preprocess.pipeline",
-        *arguments,
-    )
+    _require_expedia(dataset)
+    require_fit_grid("expedia")
+    matlab(EXPERIMENT, "fit_mmnl_only('expedia');")
 
 
 def fit_all_models(
@@ -94,7 +43,12 @@ def fit_all_models(
     shard_count: int = 1,
     resume: bool = False,
 ) -> None:
-    """Fit a deterministic subset of all six Expedia models."""
+    """Fit a deterministic subset of all six models into a staging folder.
+
+    The canonical data and fit trees are deliberately rejected.  A completed
+    50-file staging grid can be promoted only after the separate data, fit,
+    and evaluation checks have passed.
+    """
 
     _require_expedia(dataset)
     requested_data_dir = Path(data_dir).expanduser()
@@ -103,10 +57,21 @@ def fit_all_models(
         raise ValueError("Expedia data and fit directories may not be symlinks.")
     resolved_data_dir = requested_data_dir.resolve()
     resolved_fit_dir = requested_fit_dir.resolve()
+    canonical_fit_dir = (ROOT / "opt_data" / "expedia").resolve()
+    canonical_data_dir = (ROOT / "data" / "processed" / "expedia").resolve()
     if not resolved_data_dir.is_dir():
         raise FileNotFoundError(
             f"The explicit Expedia data directory is missing: {resolved_data_dir}"
         )
+    for selected_path in (resolved_data_dir, resolved_fit_dir):
+        if any(
+            selected_path == protected or _is_within(selected_path, protected)
+            for protected in (canonical_data_dir, canonical_fit_dir)
+        ):
+            raise ValueError(
+                "Fresh Expedia data and fits must remain outside the canonical "
+                "data/processed/expedia and opt_data/expedia trees."
+            )
     if (
         resolved_data_dir == resolved_fit_dir
         or _is_within(resolved_data_dir, resolved_fit_dir)
@@ -154,8 +119,16 @@ def fit_all_models(
     matlab(EXPERIMENT, expression)
 
 
+def evaluate_mmnl(dataset: str = "expedia") -> None:
+    """Evaluate the MMNL component of the unified Expedia fitted grid."""
+
+    _require_expedia(dataset)
+    require_fit_grid("expedia")
+    matlab(EXPERIMENT, "evaluate_mmnl_only('expedia');")
+
+
 def evaluate_local_predictive() -> None:
-    """Build the 300-row Expedia predictive-result chain."""
+    """Build the canonical 300-row Expedia predictive-result chain."""
 
     require_fit_grid("expedia")
     matlab(EXPERIMENT, "evaluate_expedia_archived_models;")

@@ -39,15 +39,15 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="stage", required=True)
     stage_help = {
         "preprocess": "replace the canonical Trivago processed-data generation",
-        "build-expedia-h5": "build the historical Expedia HDF5 input from train.csv",
-        "preprocess-expedia": "build corrected Expedia MAT files from HDF5",
-        "fit": "fit all six Trivago models",
-        "evaluate": "evaluate the Trivago six-model fit grid",
-        "tables": "publish Trivago predictive tables",
-        "fit-expedia": "fit all six Expedia models",
+        "fit": "refit and replace all six canonical Trivago model artifacts",
+        "evaluate": "evaluate the retained Trivago six-model fit grid",
+        "tables": "validate a Trivago evaluation bundle and publish paper tables",
+        "fit-mmnl": "refit the MMNL fields in all 50 unified Expedia fits",
+        "fit-expedia": "fit all six Expedia models into an isolated staging grid",
+        "evaluate-mmnl": "evaluate MMNL from the 50 unified Expedia fits",
         "evaluate-local": "regenerate all result stages without refitting",
         "synthetic": "run and publish the deterministic synthetic experiment",
-        "expedia-local-predictive": "evaluate all six Expedia models and publish tables",
+        "expedia-local-predictive": "evaluate and merge archived 250 + MMNL 50 tasks",
         "counterfactuals": "run one explicitly named counterfactual dataset",
     }
     for stage in ("preprocess", "fit", "evaluate", "tables"):
@@ -57,60 +57,13 @@ def build_parser() -> argparse.ArgumentParser:
             description=stage_help[stage],
         )
         child.add_argument("--dataset", choices=["trivago"], default="trivago")
-    expedia_h5_parser = subparsers.add_parser(
-        "build-expedia-h5",
-        help=stage_help["build-expedia-h5"],
-        description=stage_help["build-expedia-h5"],
-    )
-    expedia_h5_parser.add_argument(
-        "--csv",
-        type=Path,
-        required=True,
-        help="Kaggle Expedia train.csv",
-    )
-    expedia_h5_parser.add_argument(
-        "--output",
-        type=Path,
-        default=Path("data/raw/expedia/preprocess_data_com.h5"),
-    )
-    expedia_h5_parser.add_argument("--hdf-key", default="data")
-    expedia_h5_parser.add_argument("--chunk-rows", type=int, default=250_000)
-    expedia_h5_parser.add_argument("--overwrite", action="store_true")
-    expedia_preprocess_parser = subparsers.add_parser(
-        "preprocess-expedia",
-        help=stage_help["preprocess-expedia"],
-        description=stage_help["preprocess-expedia"],
-    )
-    expedia_preprocess_parser.add_argument(
-        "--h5",
-        type=Path,
-        required=True,
-        help="user-supplied preprocess_data_com.h5",
-    )
-    expedia_preprocess_parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=Path("data/processed/expedia"),
-    )
-    expedia_preprocess_parser.add_argument("--hdf-key", default="data")
-    expedia_preprocess_parser.add_argument(
-        "--markets",
-        nargs="+",
-        choices=expedia_predictive.EXPEDIA_MARKETS,
-        default=list(expedia_predictive.EXPEDIA_MARKETS),
-    )
-    expedia_preprocess_parser.add_argument(
-        "--trials",
-        nargs="+",
-        type=int,
-        choices=range(1, 11),
-        default=list(range(1, 11)),
-    )
-    expedia_preprocess_parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help="replace the selected generated MAT files and manifest",
-    )
+    for stage in ("fit-mmnl", "evaluate-mmnl"):
+        child = subparsers.add_parser(
+            stage,
+            help=stage_help[stage],
+            description=stage_help[stage],
+        )
+        child.add_argument("--dataset", choices=["expedia"], default="expedia")
     expedia_fit_parser = subparsers.add_parser(
         "fit-expedia",
         help=stage_help["fit-expedia"],
@@ -120,14 +73,14 @@ def build_parser() -> argparse.ArgumentParser:
     expedia_fit_parser.add_argument(
         "--data-dir",
         type=Path,
-        default=Path("data/processed/expedia"),
-        help="corrected Expedia MAT directory",
+        required=True,
+        help="explicit corrected Expedia MAT staging directory",
     )
     expedia_fit_parser.add_argument(
         "--fit-dir",
         type=Path,
-        default=Path("opt_data/expedia"),
-        help="output directory for all six fitted models",
+        required=True,
+        help="isolated output directory outside the canonical data/fit trees",
     )
     expedia_fit_parser.add_argument(
         "--markets",
@@ -147,7 +100,7 @@ def build_parser() -> argparse.ArgumentParser:
     expedia_fit_parser.add_argument(
         "--resume",
         action="store_true",
-        help="check and skip already completed task files",
+        help="validate and skip already completed staging tasks",
     )
     for stage in (
         "evaluate-local",
@@ -179,25 +132,10 @@ def main() -> None:
         evaluate_local()
     elif args.stage == "preprocess":
         trivago_predictive.preprocess(args.dataset)
-    elif args.stage == "build-expedia-h5":
-        expedia_predictive.build_h5_from_csv(
-            args.csv,
-            output_path=args.output,
-            hdf_key=args.hdf_key,
-            chunk_rows=args.chunk_rows,
-            overwrite=args.overwrite,
-        )
-    elif args.stage == "preprocess-expedia":
-        expedia_predictive.preprocess_from_h5(
-            args.h5,
-            output_dir=args.output_dir,
-            hdf_key=args.hdf_key,
-            markets=args.markets,
-            trials=args.trials,
-            overwrite=args.overwrite,
-        )
     elif args.stage == "fit":
         trivago_predictive.fit(args.dataset)
+    elif args.stage == "fit-mmnl":
+        expedia_predictive.fit_mmnl(args.dataset)
     elif args.stage == "fit-expedia":
         expedia_predictive.fit_all_models(
             args.dataset,
@@ -211,6 +149,8 @@ def main() -> None:
         )
     elif args.stage == "evaluate":
         trivago_predictive.evaluate(args.dataset)
+    elif args.stage == "evaluate-mmnl":
+        expedia_predictive.evaluate_mmnl(args.dataset)
     elif args.stage == "tables":
         trivago_predictive.tables(args.dataset)
     elif args.stage == "expedia-local-predictive":

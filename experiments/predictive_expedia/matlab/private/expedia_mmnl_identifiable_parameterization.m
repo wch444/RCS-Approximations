@@ -2,7 +2,7 @@ function [train_reduced,test_reduced,beta0_reduced,metadata] = ...
         expedia_mmnl_identifiable_parameterization( ...
             train_full,test_full,beta0_full,feature_start)
 %EXPEDIA_MMNL_IDENTIFIABLE_PARAMETERIZATION Identify the Expedia MMNL design.
-%   The Expedia matrices contain an item intercept followed by a
+%   The archived Expedia matrices contain an item intercept followed by a
 %   mutually exclusive collection of position-bin indicators.  This helper
 %   uses position_bin_0 as the reference category and removes any other
 %   position bin that is identically zero in the training split.  The full
@@ -19,7 +19,7 @@ if ~isnumeric(feature_start) || ~isscalar(feature_start) ...
         || ~isreal(feature_start) || ~isfinite(feature_start) ...
         || feature_start ~= expected_feature_start
     error('expedia_mmnl_identifiable_parameterization:InvalidFeatureStart', ...
-        'The Expedia feature_start must be 8.');
+        'The archived Expedia feature_start must be 8.');
 end
 validate_matrix_pair(train_full,test_full,position_matrix_start);
 

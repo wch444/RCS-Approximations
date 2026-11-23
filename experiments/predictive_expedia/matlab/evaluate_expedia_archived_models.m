@@ -1,7 +1,7 @@
 function results = evaluate_expedia_archived_models(markets, trials)
-%EVALUATE_EXPEDIA_ARCHIVED_MODELS Evaluate five freshly fitted Expedia models.
-%   This evaluator computes CMNL, MNL, SeqINV, NSMNL, and SCM metrics from
-%   the 50 unified fit files against the 50 corrected Expedia matrices. Fixed
+%EVALUATE_EXPEDIA_ARCHIVED_MODELS Evaluate five retained Expedia fits.
+%   This read-only bridge evaluates CMNL, MNL, SeqINV, NSMNL, and SCM from
+%   the 50 unified fit files against the 50 archived Expedia matrices.  Fixed
 %   filenames define the canonical 5-site by 10-trial grid.  SCM parameters
 %   use [beta; alpha].  CMNL and SCM
 %   NLL are recorded as NaN because their maintained evaluators do not expose
@@ -72,14 +72,15 @@ for market = ordered_markets
             error('evaluate_expedia_archived_models:InvalidLegacyFit', ...
                 'Unified MAT must contain one scalar fit.models: %s.',fit_name);
         end
-        parameters = fit_payload.fit.models;
+        parameters = validate_unified_fit( ...
+            fit_payload.fit,'expedia',market,trial,[],test_full);
 
         for model_index = 1:numel(model_names)
             model = model_names(model_index);
             canonical_model_index = find(canonical_model_names == model,1);
             % Match evaluate_all_models exactly so a model/market/trial task
             % has the same Monte Carlo stream whether it is evaluated from a
-            % fresh six-model artifact or this five-model evaluation block.
+            % fresh six-model artifact or this archived bridge.
             seed = 20260808 + 10000*trial ...
                 + 100*canonical_market_index + canonical_model_index;
             rng(seed,'twister');
@@ -142,7 +143,7 @@ valid_metrics = numel(values) == 7 ...
     && all(diff(paper_and_auxiliary(4:6)) >= -1e-12);
 if ~valid_nll || ~valid_metrics
     error('evaluate_expedia_archived_models:NonFiniteMetric', ...
-        'Expedia evaluator returned invalid metrics for %s.',model);
+        'Archived Expedia evaluator returned invalid metrics for %s.',model);
 end
 end
 
@@ -198,7 +199,7 @@ if height(results) ~= expected_rows ...
         || any(~isnan(results.NLL(undefined_nll))) ...
         || any(~isfinite(results.NLL(~undefined_nll)))
     error('evaluate_expedia_archived_models:IncompleteOutput', ...
-        'Expedia result table failed its complete-grid contract.');
+        'Archived Expedia result table failed its complete-grid contract.');
 end
 end
 

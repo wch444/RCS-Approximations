@@ -15,10 +15,12 @@ Computing toolboxes is the tested numerical environment.
 Starting from the Kaggle `train.csv`, run:
 
 ```bash
-python reproduce.py build-expedia-h5 \
-  --csv data/raw/expedia/train.csv
-python reproduce.py preprocess-expedia \
-  --h5 data/raw/expedia/preprocess_data_com.h5
+python -m experiments.predictive_expedia.python.preprocess.raw_to_h5 \
+  --csv data/raw/expedia/train.csv \
+  --output data/raw/expedia/preprocess_data_com.h5
+python -m experiments.predictive_expedia.python.preprocess.pipeline \
+  --h5 data/raw/expedia/preprocess_data_com.h5 \
+  --output-dir data/processed/expedia
 python reproduce.py expedia-local-predictive
 python reproduce.py counterfactuals --dataset expedia
 ```
@@ -70,6 +72,10 @@ and fixed task-keyed seeds rooted at `20260808`.
 - Expedia and Trivago predictive evaluation each produce 300 trial rows for
   the five-market by ten-trial by six-model grid.
 - The Trivago counterfactual covers the same 300 fitted tasks.
+- Trivago counterfactual gains average each session's revenue ratio to the
+  offer-all baseline, with equal weight per session. Reporting uses each
+  task's `MeanGRatio` and `MeanWRatio`, weighted by its session count, rather
+  than taking a ratio of aggregate revenues.
 - The Expedia mixed-order study covers five sites, ten trials, and 500 eligible
   queries per task. Standard errors use the ten trial means as the replication
   unit.

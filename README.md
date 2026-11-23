@@ -5,6 +5,13 @@ the SCM comparison study. It includes the complete 5-by-10 fitted grids for
 Expedia and Trivago and the published synthetic result bundle. Raw data,
 processed matrices, and generated empirical results are not bundled.
 
+## Paper
+
+1. Pin Gao, Yicheng Liu, Chenhao Wang, Zizhuo Wang. 2026+. **RCS Approximations for Assortment Optimization with Sequential Consumer Behavior.** *Manufacturing & Service Operations Management.*
+
+The repository publishes computational code, fitted parameters, and generated
+result fragments. Full manuscript TeX sources are not included.
+
 ## Requirements
 
 - MATLAB R2023b with Optimization Toolbox, Statistics and Machine Learning
@@ -33,11 +40,13 @@ historical fixed-format pandas HDF5 input, under key `data`; the second builds
 the corrected 50-file MATLAB sample grid:
 
 ```bash
-python reproduce.py build-expedia-h5 \
-  --csv data/raw/expedia/train.csv
+python -m experiments.predictive_expedia.python.preprocess.raw_to_h5 \
+  --csv data/raw/expedia/train.csv \
+  --output data/raw/expedia/preprocess_data_com.h5
 
-python reproduce.py preprocess-expedia \
-  --h5 data/raw/expedia/preprocess_data_com.h5
+python -m experiments.predictive_expedia.python.preprocess.pipeline \
+  --h5 data/raw/expedia/preprocess_data_com.h5 \
+  --output-dir data/processed/expedia
 
 python reproduce.py expedia-local-predictive
 
@@ -95,15 +104,19 @@ The 50 unified Trivago fits used by the paper are bundled under
 The two fitting commands remain available:
 
 ```bash
-python reproduce.py fit-expedia --dataset expedia
+python reproduce.py fit-expedia --dataset expedia \
+  --data-dir /absolute/path/to/expedia_data_stage \
+  --fit-dir /absolute/path/to/expedia_fit_stage
 python reproduce.py fit --dataset trivago
 ```
 
-Run a full re-estimation in a disposable clone or worktree after moving the
-corresponding bundled `opt_data/<dataset>/` directory aside. Expedia refuses to
-overwrite an existing task; Trivago replaces its canonical task files.
-Expedia `--resume` is intended only for continuing a newly started incomplete
-fit grid, not for consuming the bundled grid.
+For Expedia, first generate the complete processed matrix grid in the explicit
+data staging directory above. Both Expedia staging directories must be outside
+`data/processed/expedia/` and `opt_data/expedia/`; fresh fitting writes to the
+staged fit directory. Review a complete staged grid before deliberately
+promoting it for evaluation. `--resume` validates completed staged tasks.
+For Trivago, use a disposable clone or worktree and move the bundled
+`opt_data/trivago/` directory aside because fitting replaces its task files.
 
 ## Synthetic experiment
 
