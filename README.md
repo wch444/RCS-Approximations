@@ -9,6 +9,23 @@ processed matrices, and generated empirical results are not bundled.
 
 1. Pin Gao, Yicheng Liu, Chenhao Wang, Zizhuo Wang. 2026+. **RCS Approximations for Assortment Optimization with Sequential Consumer Behavior.** *Manufacturing & Service Operations Management.*
 
+## Code corresponding to the paper
+
+| Paper experiment or construction | Code directory |
+|---|---|
+| Trivago predictive comparison | `experiments/predictive_trivago/` |
+| Trivago counterfactual analysis | `experiments/counterfactual_trivago/` |
+| Expedia predictive comparison | `experiments/predictive_expedia/` |
+| Expedia mixed evaluation orders | `experiments/mixed_order_expedia/` |
+| Synthetic heuristic performance | `experiments/synthetic/` |
+| Numerical upper-bound construction | `experiments/worst_ratio/` |
+
+`common/` contains shared computational helpers. `opt_data/` contains the
+paper's fitted parameters, and `new/figures/` contains its mixed-order figures.
+Tests cover the paper's preprocessing and counterfactual reporting. Manuscript
+sources, manuscript-editing utilities, and separate exploratory model packages
+are outside this release.
+
 ## Requirements
 
 - MATLAB R2023b with Optimization Toolbox, Statistics and Machine Learning

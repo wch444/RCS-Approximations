@@ -60,3 +60,9 @@ __pycache__/
 .idea/
 .claude/
 .DS_Store
+
+# Private research packages and manuscript maintenance
+/sequential_rcs/
+/common/python/update_expedia_manuscript.py
+/common/python/test_update_expedia_manuscript.py
+/docs/research/
